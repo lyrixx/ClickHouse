@@ -513,11 +513,11 @@ void MergeTreeDataSelectExecutor::filterPartsByPartition(
     {
         chassert(minmax_idx_condition && partition_pruner);
         const auto & partition_key = metadata_snapshot->getPartitionKey();
-        minmax_columns_types = data.getMinMaxColumnsTypes(partition_key);
+        minmax_columns_types = MergeTreeData::getMinMaxColumnsTypes(partition_key);
 
         if (settings.force_index_by_date && (minmax_idx_condition->alwaysUnknownOrTrue() && partition_pruner->isUseless()))
         {
-            auto minmax_columns_names = data.getMinMaxColumnsNames(partition_key);
+            auto minmax_columns_names = MergeTreeData::getMinMaxColumnsNames(partition_key);
             throw Exception(ErrorCodes::INDEX_NOT_USED,
                 "Neither MinMax index by columns ({}) nor partition expr is used and setting 'force_index_by_date' is set",
                 fmt::join(minmax_columns_names, ", "));
@@ -606,7 +606,7 @@ RangesInDataParts MergeTreeDataSelectExecutor::filterPartsByPrimaryKeyAndSkipInd
         Strings forced_indices;
         {
             Tokens tokens(indices.data(), indices.data() + indices.size(), settings.max_query_size);
-            IParser::Pos pos(tokens, static_cast<unsigned>(settings.max_parser_depth));
+            IParser::Pos pos(tokens, static_cast<unsigned>(settings.max_parser_depth), static_cast<unsigned>(settings.max_parser_backtracks));
             Expected expected;
             if (!parseIdentifiersOrStringLiterals(pos, expected, forced_indices))
                 throw Exception(ErrorCodes::CANNOT_PARSE_TEXT, "Cannot parse force_data_skipping_indices ('{}')", indices);
