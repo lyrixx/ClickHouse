@@ -12,9 +12,14 @@ SquashingChunksTransform::SquashingChunksTransform(
 
 void SquashingChunksTransform::onConsume(Chunk chunk)
 {
+    if (cur_chunkinfos.empty())
+        cur_chunkinfos = chunk.getChunkInfos();
+
     if (auto block = squashing.add(getInputPort().getHeader().cloneWithColumns(chunk.detachColumns())))
     {
         cur_chunk.setColumns(block.getColumns(), block.rows());
+        cur_chunk.setChunkInfos(std::move(cur_chunkinfos));
+        cur_chunkinfos = {};
     }
 }
 
@@ -30,6 +35,8 @@ void SquashingChunksTransform::onFinish()
 {
     auto block = squashing.add({});
     finish_chunk.setColumns(block.getColumns(), block.rows());
+    finish_chunk.setChunkInfos(std::move(cur_chunkinfos));
+    cur_chunkinfos = {};
 }
 
 void SquashingChunksTransform::work()
@@ -60,7 +67,10 @@ void SimpleSquashingChunksTransform::transform(Chunk & chunk)
     if (!finished)
     {
         if (auto block = squashing.add(getInputPort().getHeader().cloneWithColumns(chunk.detachColumns())))
+        {
             chunk.setColumns(block.getColumns(), block.rows());
+            chunk.setChunkInfos(chunk.getChunkInfos());
+        }
     }
     else
     {
