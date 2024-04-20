@@ -578,7 +578,7 @@ public:
 
     String getName() const override { return "BufferSink"; }
 
-    void consume(Chunk chunk) override
+    void consume(Chunk & chunk) override
     {
         size_t rows = chunk.getNumRows();
         if (!rows)
@@ -991,7 +991,7 @@ void StorageBuffer::writeBlockToDestination(const Block & block, StoragePtr tabl
     auto insert_context = Context::createCopy(getContext());
     insert_context->makeQueryContext();
 
-    InterpreterInsertQuery interpreter{insert, insert_context, allow_materialized};
+    InterpreterInsertQuery interpreter(insert, insert_context, allow_materialized, false, false, false);
 
     auto block_io = interpreter.execute();
     PushingPipelineExecutor executor(block_io.pipeline);
